@@ -43,7 +43,6 @@ for i in range(1, 9):
         )
         x = unnormalize(x, bounds)
         y = problem(x)
-        print(x)
 
         train_X = torch.cat((train_X, x), 0)
         train_Y = torch.cat((train_Y, y), 0)
