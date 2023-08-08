@@ -17,7 +17,7 @@ n = min(60, 6 * d)
 n_iteration = 3
 
 for i in range(1, 9):
-    problem = WOSGZ(id=i, dim=d, num_objectives=M)
+    problem = WOSGZ(id=i, dim=d, num_objectives=M, negate=True)
     bounds = problem.bounds
     standard_bounds = torch.zeros(2, d)
     standard_bounds[1] = 1.0

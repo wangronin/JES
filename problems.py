@@ -35,7 +35,10 @@ class ZDT(MultiObjectiveTestProblem):
         return torch.from_numpy(F).to(torch.float32)
 
     def gen_pareto_front(self, n: int) -> Tensor:
-        return torch.from_numpy(self._problem.pareto_front(n)).to(torch.float32)
+        PF = torch.from_numpy(self._problem.pareto_front(n)).to(torch.float32)
+        if self.negate:
+            PF *= -1
+        return PF
 
 
 class WOSGZ(MultiObjectiveTestProblem):
@@ -64,7 +67,10 @@ class WOSGZ(MultiObjectiveTestProblem):
         return torch.from_numpy(F).to(torch.float32)
 
     def gen_pareto_front(self, n: int) -> Tensor:
-        return torch.from_numpy(self._problem.pareto_front(n)).to(torch.float32)
+        PF = torch.from_numpy(self._problem.pareto_front(n)).to(torch.float32)
+        if self.negate:
+            PF *= -1
+        return PF
 
 
 class RE(MultiObjectiveTestProblem):
@@ -86,21 +92,27 @@ class RE(MultiObjectiveTestProblem):
         return torch.from_numpy(F).to(torch.float32)
 
     def gen_pareto_front(self, n: int) -> Tensor:
-        return torch.from_numpy(self._problem.pareto_front(n)).to(torch.float32)
+        PF = torch.from_numpy(self._problem.pareto_front(n)).to(torch.float32)
+        if self.negate:
+            PF *= -1
+        return PF
 
 
-# f = ZDT(1, 10)
+# f = ZDT(id=1, dim=10, negate=False)
 # print(f.bounds)
+# print(f.ref_point)
 # print(f(torch.rand(5, 10)))
 
-# f = WOSGZ(2, 10)
+# f = WOSGZ(id=2, dim=10, negate=True)
 # bounds = f.bounds
 # X = (bounds[1, :] - bounds[0, :]) * torch.rand(5, 10) + bounds[0, :]
 # print(f.bounds)
+# print(f.ref_point)
 # print(f(X))
 
-# f = RE()
+# f = RE(negate=True)
 # bounds = f.bounds
 # X = (bounds[1, :] - bounds[0, :]) * torch.rand(5, f.dim) + bounds[0, :]
 # print(f.bounds)
+# print(f.ref_point)
 # print(f(X))
