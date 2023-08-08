@@ -5,35 +5,25 @@ Some methods for sampling the Pareto optimal points.
 """
 
 from __future__ import annotations
-from typing import Optional, List, Tuple
-import torch
+
+from math import ceil
+from typing import List, Optional, Tuple
+
 import numpy as np
+import torch
 from botorch.models.converter import batched_to_model_list
 from botorch.models.deterministic import GenericDeterministicModel
 from botorch.models.model import Model
 from botorch.models.model_list_gp_regression import ModelListGP
-from botorch.utils.gp_sampling import (
-    RandomFourierFeatures,
-    get_weights_posterior,
-    get_deterministic_model
-)
 from botorch.models.multitask import MultiTaskGP
-from torch import Tensor
-
+from botorch.utils.gp_sampling import RandomFourierFeatures, get_deterministic_model, get_weights_posterior
+from botorch.utils.multi_objective.box_decompositions.non_dominated import FastNondominatedPartitioning
 from pymoo.algorithms.moo.nsga2 import NSGA2
-from pymoo.factory import (
-    get_crossover,
-    get_mutation,
-    get_sampling,
-    get_termination,
-)
 from pymoo.core.problem import Problem
+from pymoo.factory import get_crossover, get_mutation, get_sampling, get_termination
 from pymoo.optimize import minimize
-from math import ceil
-from botorch.utils.multi_objective.box_decompositions.non_dominated import (
-    FastNondominatedPartitioning
-)
 from scipy.stats import norm
+from torch import Tensor
 
 
 def get_gp_samples_with_fantasies(
@@ -45,7 +35,7 @@ def get_gp_samples_with_fantasies(
 ) -> List[List[GenericDeterministicModel]]:
     r"""Sample functions from GP posterior using random Fourier features.
 
-    This is a hacky way to get samples from the model conditioned at fantasy 
+    This is a hacky way to get samples from the model conditioned at fantasy
     points. This functionality is only needed when using sequentially greedy
     optimization for batch selection with the Joint Entropy Search acquisition
     function.
@@ -78,16 +68,16 @@ def get_gp_samples_with_fantasies(
         num_fantasies = fantasy_model.batch_shape[0]
     else:
         num_fantasies = 1
-    
+
     # check transform
     # intf = None
     # octf = None
     # if hasattr(model, "input_transform"):
-        # intf = model.input_transform
+    # intf = model.input_transform
     # if hasattr(model, "outcome_transform"):
-        # octf = model.outcome_transform
-        # model.outcome_transform = None
-        
+    # octf = model.outcome_transform
+    # model.outcome_transform = None
+
     list_of_samples = []
 
     # iterate over each fantasy
@@ -137,14 +127,14 @@ def get_gp_samples_with_fantasies(
             )
             for i in range(num_samples)
         ]
-        
+
         # check transform
         # for i in range(num_samples):
-            # if intf is not None:
-                # sample_j[i].input_transform = intf
-            # if octf is not None:
-                # sample_j[i].outcome_transform = octf
-        
+        # if intf is not None:
+        # sample_j[i].input_transform = intf
+        # if octf is not None:
+        # sample_j[i].outcome_transform = octf
+
         list_of_samples = list_of_samples + [sample_j]
 
     return list_of_samples
@@ -218,11 +208,11 @@ def pareto_solver(
 
 
 def get_optimistic_samples(
-        model: Model,
-        num_samples: int,
-        beta: Optional[Tensor] = None,
+    model: Model,
+    num_samples: int,
+    beta: Optional[Tensor] = None,
 ) -> List[List[GenericDeterministicModel]]:
-    r""" Generates the optimistic samples of the form `mean + beta * sqrt(var)`.
+    r"""Generates the optimistic samples of the form `mean + beta * sqrt(var)`.
     Args:
         model: The fitted model.
         num_samples: The number of samples to generate.
@@ -246,10 +236,12 @@ def get_optimistic_samples(
 
     if num_fantasies == 1:
         for i in range(num_samples):
+
             def sample_i(X):
                 mean = model.posterior(X).mean
                 var = model.posterior(X).variance
                 return mean + beta[i] * torch.sqrt(var)
+
             function_i = GenericDeterministicModel(sample_i)
 
             list_of_samples = list_of_samples + [function_i]
@@ -329,14 +321,10 @@ def sample_pareto_sets_and_fronts(
         fantasy_model = model
 
     if not optimistic_sampling:
-        samples = get_gp_samples_with_fantasies(
-            model, fantasy_model, M, num_pareto_samples, num_rff_features
-        )
+        samples = get_gp_samples_with_fantasies(model, fantasy_model, M, num_pareto_samples, num_rff_features)
     else:
-        samples = get_optimistic_samples(
-            fantasy_model, num_pareto_samples, beta
-        )
-    
+        samples = get_optimistic_samples(fantasy_model, num_pareto_samples, beta)
+
     num_fantasies = len(samples)
 
     # `num_fantasies x M x N`
@@ -357,15 +345,10 @@ def sample_pareto_sets_and_fronts(
     # `num_fantasies x N x d`
     train_x = train_x[:, 0, :, :]
 
-    pareto_sets = torch.zeros(
-        (num_pareto_samples, num_fantasies, num_pareto_points, d)
-    )
-    pareto_fronts = torch.zeros(
-        (num_pareto_samples, num_fantasies, num_pareto_points, M)
-    )
+    pareto_sets = torch.zeros((num_pareto_samples, num_fantasies, num_pareto_points, d))
+    pareto_fronts = torch.zeros((num_pareto_samples, num_fantasies, num_pareto_points, M))
     for i in range(num_pareto_samples):
         for j in range(num_fantasies):
-
             ratio = 2
             pop_size_new = pop_size
             generations_new = generations
@@ -396,9 +379,13 @@ def sample_pareto_sets_and_fronts(
                 pf = pf
 
             if ratio > 1:
-                error_text = "Only found " + str(num_pareto_generated) + \
-                    " Pareto efficient points instead of " + \
-                    str(num_pareto_points) + "."
+                error_text = (
+                    "Only found "
+                    + str(num_pareto_generated)
+                    + " Pareto efficient points instead of "
+                    + str(num_pareto_points)
+                    + "."
+                )
                 raise RuntimeError(error_text)
 
             # Randomly truncate the Pareto set and front
@@ -409,44 +396,39 @@ def sample_pareto_sets_and_fronts(
             # improvement.
             else:
                 # get `num_pareto_points - num_greedy` indices randomly
-                indices = torch.randperm(
-                    num_pareto_generated
-                )[:num_pareto_points-num_greedy].tolist()
-                
+                indices = torch.randperm(num_pareto_generated)[: num_pareto_points - num_greedy].tolist()
+
                 fantasized_vec = samples[j][i](train_x[j, :, :])
                 # fantasized_vec = train_y[j, :, :]
-                
+
                 try:
                     ty = model.outcome_transform.untransform(train_y[j, :, :])[0]
-                    fantasized_pf = model.outcome_transform.untransform(
-                        fantasized_vec
-                    )[0]
+                    fantasized_pf = model.outcome_transform.untransform(fantasized_vec)[0]
                 except AttributeError:
                     ty = train_y[j, :, :]
                     fantasized_pf = fantasized_vec
 
                 # get the `num_greedy` indices greedily
                 ref_point = torch.amin(ty, dim=0) - 0.1 * abs(torch.amin(ty, dim=0))
-                
+
                 for k in range(num_greedy):
-                    partitioning = FastNondominatedPartitioning(
-                        ref_point=ref_point, Y=fantasized_pf
-                    )
+                    partitioning = FastNondominatedPartitioning(ref_point=ref_point, Y=fantasized_pf)
                     hypercell_bounds = partitioning.hypercell_bounds
                     # `1 x num_boxes x M`
                     lo = hypercell_bounds[0].unsqueeze(0)
                     up = hypercell_bounds[1].unsqueeze(0)
                     # compute hv
-                    hvi = torch.max(
-                        torch.min(pf.unsqueeze(-2), up) - lo,
-                        torch.zeros(lo.shape)
-                    ).prod(dim=-1).sum(dim=-1)
+                    hvi = (
+                        torch.max(torch.min(pf.unsqueeze(-2), up) - lo, torch.zeros(lo.shape))
+                        .prod(dim=-1)
+                        .sum(dim=-1)
+                    )
                     # zero out pending points
                     hvi[indices] = 0
                     # store update
                     am = torch.argmax(hvi).tolist()
                     indices = indices + [am]
-                    fantasized_pf = torch.cat([fantasized_pf, pf[am:am+1, :]], dim=0)
+                    fantasized_pf = torch.cat([fantasized_pf, pf[am : am + 1, :]], dim=0)
                 indices = torch.tensor(indices)
 
             pareto_sets[i, j, :, :] = ps[indices, :]
