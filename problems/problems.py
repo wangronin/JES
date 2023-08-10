@@ -1,17 +1,8 @@
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
-
 import autograd
 import numpy as np
 from autograd.numpy import row_stack
 from numpy import atleast_2d as at_least2d
 from pymoo.core.problem import Problem as PymooProblem
-
-# from pymoo.model.problem import Problem as PymooProblem
-# from pymoo.model.problem import at_least2d, evaluate_in_parallel
-
-# from pymoo.core.problem import evaluate_in_parallel
-
 
 """
 Problem definition built upon Pymoo's Problem class, added some custom features

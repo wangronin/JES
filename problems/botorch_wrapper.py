@@ -5,8 +5,8 @@ from botorch.test_functions.base import MultiObjectiveTestProblem
 from pymoo.problems.multi import *
 from torch import Tensor
 
-from real_world import RE1
-from wosgz import *
+from problems.real_world import RE1
+from problems.wosgz import *
 
 
 class ZDT(MultiObjectiveTestProblem):
@@ -96,23 +96,3 @@ class RE(MultiObjectiveTestProblem):
         if self.negate:
             PF *= -1
         return PF
-
-
-# f = ZDT(id=1, dim=10, negate=False)
-# print(f.bounds)
-# print(f.ref_point)
-# print(f(torch.rand(5, 10)))
-
-# f = WOSGZ(id=2, dim=10, negate=True)
-# bounds = f.bounds
-# X = (bounds[1, :] - bounds[0, :]) * torch.rand(5, 10) + bounds[0, :]
-# print(f.bounds)
-# print(f.ref_point)
-# print(f(X))
-
-# f = RE(negate=True)
-# bounds = f.bounds
-# X = (bounds[1, :] - bounds[0, :]) * torch.rand(5, f.dim) + bounds[0, :]
-# print(f.bounds)
-# print(f.ref_point)
-# print(f(X))

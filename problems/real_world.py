@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from pymoo_problems import Problem
+from problems.problems import Problem
 
 
 class RE(Problem, ABC):

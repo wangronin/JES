@@ -1,11 +1,7 @@
 import autograd.numpy as anp
 import numpy as np
 
-from pymoo_problems import Problem
-
-# from pymoo.problems.util import load_pareto_front_from_file
-# from sympy import N
-
+from problems.problems import Problem
 
 ##TODO: The following codes is converted from mDTLZ.m. The g and h functions can be optimized
 

@@ -9,7 +9,7 @@ from botorch.utils.multi_objective.pareto import is_non_dominated
 from botorch.utils.transforms import normalize, unnormalize
 
 from jes.utils.bo_loop import bo_loop
-from problems import RE, WOSGZ, ZDT
+from problems.botorch_wrapper import RE, WOSGZ, ZDT
 
 d = 30
 M = 2
